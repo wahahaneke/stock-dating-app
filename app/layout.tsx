@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Link from "next/link"; // 引入 Link
+import Link from "next/link"; 
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -72,7 +72,8 @@ export default function RootLayout({
                 <li><Link href="/meet/gold" className="hover:text-green-500 transition">黄金 (Gold) 投资者</Link></li>
                 <li><Link href="/meet/forex" className="hover:text-green-500 transition">外汇 (Forex) 操盘手</Link></li>
                 <li><Link href="/meet/futures" className="hover:text-green-500 transition">期货 (Futures) 大佬</Link></li>
-                <li><Link href="/login" className="text-green-600 hover:text-green-400 transition">申请上币/上股 -></Link></li>
+                {/* 关键修复：把 -> 改成了 &rarr; */}
+                <li><Link href="/login" className="text-green-600 hover:text-green-400 transition">申请上币/上股 &rarr;</Link></li>
               </ul>
             </div>
 
