@@ -4,9 +4,18 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 
+// --- 模拟数据：这是我们的“氛围组” ---
+const MOCK_LEADERS = [
+  { name: "TeslaKing_99", profit: "+142%", asset: "$2.4M", avatar: "⚡️" },
+  { name: "CryptoWhale", profit: "+890%", asset: "$12.8M", avatar: "🐋" },
+  { name: "ForexSniper", profit: "+45%", asset: "$850K", avatar: "🎯" },
+  { name: "GoldHand", profit: "+22%", asset: "$3.2M", avatar: "🥇" },
+  { name: "NvidiaLover", profit: "+88%", asset: "$1.1M", avatar: "🤖" },
+]
+
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
-  const [isVerified, setIsVerified] = useState(false) // 新增：是否已验证
+  const [isVerified, setIsVerified] = useState(false)
   const [loading, setLoading] = useState(true)
   
   // 上传相关状态
@@ -20,7 +29,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     const checkUser = async () => {
-      // 1. 获取当前用户
       const { data: { user }, error } = await supabase.auth.getUser()
       if (error || !user) {
         router.push('/login')
@@ -28,28 +36,28 @@ export default function Dashboard() {
       }
       setUser(user)
 
-      // 2. 查户口：去 profiles 表里查这个人的状态
       try {
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('is_verified')
           .eq('id', user.id)
           .single()
         
-        // 如果查到了，更新状态
-        if (profile) {
-          setIsVerified(profile.is_verified)
-        }
+        if (profile) setIsVerified(profile.is_verified)
       } catch (e) {
-        console.log('还没档案，可能是老用户未触发')
+        console.log('用户档案未找到')
       }
-
       setLoading(false)
     }
     checkUser()
   }, [router, supabase])
 
-  // --- 上传逻辑 (完整保留) ---
+  // 按钮交互
+  const handleVipClick = () => {
+    alert('🔥 聊天室正在扩容中！\n\n您已获得“创始会员”资格，将在功能开放后第一时间获得通知。')
+  }
+
+  // --- 上传逻辑 (保持不变) ---
   const processUpload = async (file: File) => {
     if (!file) return
     if (file.size > 5 * 1024 * 1024) {
@@ -74,7 +82,6 @@ export default function Dashboard() {
       setIsDragging(false)
     }
   }
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) processUpload(e.target.files[0])
   }
@@ -90,47 +97,91 @@ export default function Dashboard() {
   }
   const triggerClick = () => fileInputRef.current?.click()
 
-  // 渲染开始
   if (loading) return <div className="min-h-screen bg-black text-white flex items-center justify-center">加载数据中...</div>
 
   return (
     <div className="min-h-screen bg-[#050505] text-gray-100 p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* 顶部欢迎语 */}
-        <div className="flex justify-between items-end mb-12 border-b border-gray-800 pb-6">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-gray-800 pb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white">
-              {isVerified ? '尊贵的验证会员' : '交易员后台'}
+            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+              {isVerified ? 'Alpha 俱乐部' : '交易员后台'}
+              {isVerified && <span className="text-xs bg-green-600 text-black px-2 py-1 rounded">VIP</span>}
             </h1>
-            <p className="text-gray-500 mt-2 font-mono text-sm">{user.email}</p>
+            <p className="text-gray-500 mt-2 font-mono text-sm">
+              当前在线会员: <span className="text-green-500 animate-pulse">1,024</span> 人
+            </p>
           </div>
           
-          {/* 状态标签：根据状态变色 */}
           <div className={`px-4 py-1 rounded-full text-xs font-bold border ${isVerified ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'}`}>
-            状态: {isVerified ? '已验证 ✅' : '待验证'}
+            ID: {user.email?.split('@')[0]} | 状态: {isVerified ? '已验证 ✅' : '待验证'}
           </div>
         </div>
 
-        {/* 核心内容区：分流显示 */}
+        {/* 核心内容区 */}
         {isVerified ? (
-          // ============ 如果已验证：显示大户室 ============
-          <div className="bg-gradient-to-br from-green-900/20 to-black border border-green-800 rounded-2xl p-10 text-center animate-fade-in">
-            <div className="text-6xl mb-6">🤑</div>
-            <h2 className="text-3xl font-bold text-white mb-4">欢迎进入 Alpha 俱乐部</h2>
-            <p className="text-gray-400 mb-8 max-w-lg mx-auto">
-              你的资产已验证。这里没有韭菜，只有真正的操盘手。
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <button className="bg-green-600 hover:bg-green-500 text-black font-bold py-4 px-8 rounded-xl transition shadow-[0_0_20px_rgba(34,197,94,0.3)]">
-                进入 VIP 聊天室
-              </button>
-              <button className="border border-green-700 text-green-500 hover:bg-green-900/30 font-bold py-4 px-8 rounded-xl transition">
-                查看大户持仓榜
-              </button>
+          // ============ 精装修后的 VIP 区域 ============
+          <div className="grid md:grid-cols-3 gap-8">
+            
+            {/* 左侧：功能入口 */}
+            <div className="md:col-span-2 space-y-6">
+              <div className="bg-gradient-to-br from-green-900/20 to-black border border-green-800 rounded-2xl p-8 text-center">
+                <div className="text-5xl mb-4">💬</div>
+                <h2 className="text-2xl font-bold text-white mb-2">VIP 核心群</h2>
+                <p className="text-gray-400 mb-6 text-sm">
+                  正在讨论: #TSLA财报 #BTC减半 #美联储加息
+                </p>
+                <button 
+                  onClick={handleVipClick}
+                  className="w-full bg-green-600 hover:bg-green-500 text-black font-bold py-3 rounded-xl transition"
+                >
+                  进入聊天室
+                </button>
+              </div>
+
+              <div className="bg-[#0a0a0a] border border-gray-800 rounded-2xl p-6 flex justify-between items-center">
+                <div>
+                  <h3 className="font-bold text-white">我的专属名片</h3>
+                  <p className="text-xs text-gray-500">已获得“实盘验证”金标</p>
+                </div>
+                <button className="text-sm text-green-500 border border-green-900 px-4 py-2 rounded-lg hover:bg-green-900/20">
+                  编辑资料
+                </button>
+              </div>
             </div>
+
+            {/* 右侧：排行榜 (氛围组) */}
+            <div className="bg-[#0a0a0a] border border-gray-800 rounded-2xl p-6">
+              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                🏆 本周收益榜
+              </h3>
+              <div className="space-y-4">
+                {MOCK_LEADERS.map((leader, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-900/50 transition cursor-default">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 flex items-center justify-center text-lg bg-gray-800 rounded-full">
+                        {leader.avatar}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-200">{leader.name}</div>
+                        <div className="text-xs text-gray-500">{leader.asset}</div>
+                      </div>
+                    </div>
+                    <div className="text-green-500 font-mono font-bold">
+                      {leader.profit}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 pt-4 border-t border-gray-800 text-center">
+                 <p className="text-xs text-gray-500">数据每 15 分钟更新</p>
+              </div>
+            </div>
+
           </div>
         ) : (
-          // ============ 如果未验证：显示上传框 ============
+          // ============ 未验证区域 (保持不变) ============
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-[#0a0a0a] border border-gray-800 rounded-2xl p-8 shadow-lg transition">
               <h2 className="text-xl font-bold text-green-500 mb-4 flex items-center gap-2">
@@ -139,7 +190,6 @@ export default function Dashboard() {
               <p className="text-gray-400 text-sm mb-6 leading-relaxed">
                 你需要上传资产截图才能解锁全部功能。
               </p>
-              
               <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*"/>
               <div 
                 onClick={triggerClick} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
@@ -164,7 +214,6 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
-
             <div className="bg-[#0a0a0a] border border-gray-800 rounded-2xl p-8">
                <h3 className="text-lg font-bold text-white mb-4">权益说明</h3>
                <div className="space-y-3">
