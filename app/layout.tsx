@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   title: "BullDate | 仅限高净值交易员的精英交友社区",
   description: "别再刷虚假的豪车照片了。BullDate 是全球首个基于持仓收益率验证的交友平台。",
   keywords: "股票交友, 交易员约会, 高端交友, 验资交友, 币圈交友, 投资社区",
+  // --- 新增：Google 站长验证暗号 ---
+  verification: {
+    google: "zn8nqZshVcyaRnxxKJhks1HnzsNNobrHRR8eVKXdJ74",
+  },
 };
 
 export default function RootLayout({
@@ -72,7 +76,6 @@ export default function RootLayout({
                 <li><Link href="/meet/gold" className="hover:text-green-500 transition">黄金 (Gold) 投资者</Link></li>
                 <li><Link href="/meet/forex" className="hover:text-green-500 transition">外汇 (Forex) 操盘手</Link></li>
                 <li><Link href="/meet/futures" className="hover:text-green-500 transition">期货 (Futures) 大佬</Link></li>
-                {/* 关键修复：把 -> 改成了 &rarr; */}
                 <li><Link href="/login" className="text-green-600 hover:text-green-400 transition">申请上币/上股 &rarr;</Link></li>
               </ul>
             </div>
