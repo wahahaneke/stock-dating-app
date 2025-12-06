@@ -4,30 +4,23 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 
-// --- 模拟数据：更丰富，带标签 ---
-const MOCK_LEADERS = [
-  { name: "ElonFan_X", profit: "+1,240%", asset: "$12.4M", avatar: "🚀", tag: "TSLA All-in" },
-  { name: "Satoshi_Naka", profit: "+890%", asset: "$45.2M", avatar: "🐳", tag: "BTC Whale" },
-  { name: "ForexQueen", profit: "+45%", asset: "$850K", avatar: "💃", tag: "Day Trader" },
-  { name: "GoldFinger", profit: "+22%", asset: "$3.2M", avatar: "🥇", tag: "Commodities" },
-  { name: "AI_Sniper", profit: "+188%", asset: "$5.1M", avatar: "🤖", tag: "Algo Trading" },
-]
-
-const CHAT_CHANNELS = [
-  { name: "美股核心群", active: 420, icon: "🇺🇸" },
-  { name: "加密货币大户", active: 890, icon: "₿" },
-  { name: "外汇/黄金", active: 150, icon: "💱" },
+// --- 模拟数据：适配 Moonshot 风格 ---
+const TRADERS = [
+  { name: "Pippin_Whale", profit: "+30.58%", asset: "$247M", avatar: "🐡", tag: "上线", status: "up" },
+  { name: "Franklin_G", profit: "+467.95%", asset: "$12K", avatar: "🐢", tag: "热门", status: "up" },
+  { name: "Ai16z_Bot", profit: "+109.63%", asset: "$4.2M", avatar: "🤖", tag: "AI", status: "up" },
+  { name: "MoonDog", profit: "+10.6%", asset: "$531K", avatar: "🐕", tag: "Meme", status: "up" },
+  { name: "SadFrog", profit: "-2.4%", asset: "$10K", avatar: "🐸", tag: "Rekt", status: "down" },
 ]
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [isVerified, setIsVerified] = useState(false)
+  const [activeTab, setActiveTab] = useState('home') // 控制底部导航切换: home, create, gift, profile
   const [loading, setLoading] = useState(true)
   
-  // 上传状态
+  // 上传相关
   const [uploading, setUploading] = useState(false)
-  const [uploadStatus, setUploadStatus] = useState('') 
-  const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const router = useRouter()
@@ -41,218 +34,250 @@ export default function Dashboard() {
         return
       }
       setUser(user)
-
       try {
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_verified')
-          .eq('id', user.id)
-          .single()
-        
+          .from('profiles').select('is_verified').eq('id', user.id).single()
         if (profile) setIsVerified(profile.is_verified)
-      } catch (e) { console.log('No profile') }
+      } catch (e) {}
       setLoading(false)
     }
     checkUser()
   }, [router, supabase])
 
-  // 交互
-  const handleVipClick = () => alert('🚀 正在连接加密通道...\n\n您是尊贵的创始会员，专属通道将在 24h 内开启。')
-  
   // 上传逻辑
   const processUpload = async (file: File) => {
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) {
-      alert('图片太大了，请上传小于 5MB 的图片')
-      return
-    }
     setUploading(true)
-    setUploadStatus('')
     try {
       const fileExt = file.name.split('.').pop()
       const fileName = `${user.id}/${Date.now()}.${fileExt}`
       const { error } = await supabase.storage.from('proofs').upload(fileName, file)
       if (error) throw error
-      setUploadStatus('success')
-      alert('已加密上传！审核团队正在处理。')
+      alert('✅ 提交成功！审核中...')
     } catch (error: any) {
-      setUploadStatus('error')
       alert('上传失败: ' + error.message)
     } finally {
       setUploading(false)
-      setIsDragging(false)
     }
   }
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) processUpload(e.target.files[0])
-  }
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true) }
-  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false) }
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); e.stopPropagation(); setIsDragging(false)
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) processUpload(e.dataTransfer.files[0])
+    if (e.target.files?.[0]) processUpload(e.target.files[0])
   }
   const triggerClick = () => fileInputRef.current?.click()
 
-  if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-green-500 font-mono">LOADING SYSTEM...</div>
+  if (loading) return <div className="min-h-screen bg-[#0b0b15] flex items-center justify-center text-[#d936f3]">LOADING...</div>
 
   return (
-    <div className="min-h-screen bg-black text-gray-100 font-sans selection:bg-green-500 selection:text-black">
-      {/* 顶部导航 - 像 App 一样简洁 */}
-      <nav className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="text-xl font-black tracking-tighter text-white">
-            BULL<span className="text-green-500">DATE</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 ${isVerified ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'}`}>
-              <div className={`w-2 h-2 rounded-full ${isVerified ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></div>
-              {isVerified ? '已实名认证' : '游客身份'}
-            </div>
-            <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 overflow-hidden flex items-center justify-center text-sm">
-              {user.email?.[0].toUpperCase()}
-            </div>
-          </div>
+    <div className="min-h-screen bg-[#0b0b15] text-white font-sans pb-24">
+      
+      {/* ============ 顶部搜索栏 (Moonshot 风格) ============ */}
+      <div className="fixed top-0 w-full z-50 bg-[#0b0b15] px-4 py-3 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-[#1a1a24] flex items-center justify-center text-gray-400">
+          🕒
         </div>
-      </nav>
+        <div className="flex-1 bg-[#1a1a24] rounded-full h-10 flex items-center px-4 text-sm text-gray-400">
+          🔍 搜索交易员...
+        </div>
+        <div className="w-8 h-8 rounded-full bg-[#1a1a24] flex items-center justify-center text-gray-400">
+          ⚙️
+        </div>
+      </div>
 
-      {/* 主要内容区 */}
-      <main className="pt-24 pb-12 px-6 max-w-6xl mx-auto">
+      {/* ============ 主内容区域 (根据 Tab 切换) ============ */}
+      <main className="pt-20 px-4">
         
-        {/* 未验证视图：聚焦于“渴望感” */}
-        {!isVerified && (
-          <div className="max-w-2xl mx-auto text-center mt-10">
-            <div className="inline-block p-4 rounded-full bg-gray-900/50 mb-6 border border-gray-800">
-              <span className="text-4xl">🔒</span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
-              解锁 <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">顶级交易圈</span>
-            </h1>
-            <p className="text-gray-400 text-lg mb-10 leading-relaxed">
-              BullDate 不对公众开放。我们只接纳真正的资本玩家。<br/>
-              上传你的持仓证明，获得入场券。
-            </p>
-
-            {/* 上传卡片 - 极简毛玻璃风格 */}
-            <div 
-              onClick={triggerClick} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
-              className={`relative group cursor-pointer overflow-hidden rounded-3xl border-2 border-dashed transition-all duration-300
-                ${isDragging ? 'border-green-500 bg-green-500/10 scale-[1.02]' : 'border-gray-700 hover:border-green-500/50 hover:bg-gray-900'}
-                ${uploadStatus === 'success' ? 'border-green-500 bg-green-900/20' : ''}
-              `}
-            >
-              <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*"/>
-              
-              <div className="p-12 flex flex-col items-center justify-center">
-                {uploading ? (
-                  <div className="text-green-500 font-mono animate-pulse">ENCRYPTING & UPLOADING...</div>
-                ) : uploadStatus === 'success' ? (
-                  <>
-                    <div className="text-5xl mb-4">✅</div>
-                    <h3 className="text-xl font-bold text-green-500">提交成功</h3>
-                    <p className="text-gray-500 mt-2">请留意邮箱通知</p>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-16 h-16 bg-gray-800 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition shadow-xl">
-                      📤
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">点击或拖拽上传截图</h3>
-                    <p className="text-sm text-gray-500">支持 JPG, PNG (Max 5MB)</p>
-                  </>
-                )}
-              </div>
-            </div>
-            <p className="mt-6 text-xs text-gray-600 font-mono">SECURITY: END-TO-END ENCRYPTED</p>
-          </div>
-        )}
-
-        {/* 已验证视图：社交 + 信息流风格 */}
-        {isVerified && (
-          <div className="grid lg:grid-cols-12 gap-8">
+        {/* TAB 1: 首页 (Home) */}
+        {activeTab === 'home' && (
+          <div className="animate-fade-in space-y-6">
             
-            {/* 左侧栏：个人资产卡 & 频道 (占 4 列) */}
-            <div className="lg:col-span-4 space-y-6">
-              {/* 黑卡风格的个人信息 */}
-              <div className="bg-gradient-to-br from-gray-900 to-black border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 blur-[50px] rounded-full group-hover:bg-green-500/20 transition"></div>
-                <div className="relative z-10">
-                  <div className="flex justify-between items-start mb-8">
+            {/* 总资产卡片 */}
+            <div>
+              <p className="text-gray-400 text-sm">全网总资产</p>
+              <h1 className="text-4xl font-bold mt-1">$2.45<span className="text-gray-500">M</span> <span className="text-sm text-gray-500 align-middle">›</span></h1>
+            </div>
+
+            {/* 当下焦点 (Feature Card) */}
+            <div>
+              <h3 className="text-lg font-bold mb-3">📢 当下焦点</h3>
+              <div className="bg-[#1a1a24] rounded-2xl p-4 border border-white/5">
+                <div className="flex justify-between items-start">
+                  <div className="flex gap-3">
+                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-2xl">🐡</div>
                     <div>
-                      <p className="text-xs text-gray-500 font-mono uppercase tracking-widest">Total Asset</p>
-                      <h2 className="text-3xl font-bold text-white mt-1">$2,450,000<span className="text-gray-600 text-lg">.00</span></h2>
-                    </div>
-                    <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center border border-white/10">
-                      💳
+                      <div className="font-bold text-lg">Pippin Whale</div>
+                      <div className="text-sm text-gray-400">Pippin</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-green-500/20 text-green-400 text-xs px-3 py-1 rounded-full border border-green-500/20 font-bold">
-                      Verified Pro
-                    </div>
-                    <div className="text-xs text-gray-500 font-mono">ID: {user.email?.split('@')[0]}</div>
+                  <div className="text-xs text-[#d936f3] font-bold flex items-center gap-1">
+                    ● 上线
                   </div>
                 </div>
-              </div>
-
-              {/* 聊天频道列表 */}
-              <div className="bg-[#0f0f0f] border border-white/5 rounded-3xl p-2">
-                {CHAT_CHANNELS.map((channel, i) => (
-                  <button key={i} onClick={handleVipClick} className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-white/5 transition group text-left">
-                    <div className="flex items-center gap-4">
-                      <span className="text-2xl grayscale group-hover:grayscale-0 transition">{channel.icon}</span>
-                      <div>
-                        <div className="font-bold text-gray-200 group-hover:text-white">{channel.name}</div>
-                        <div className="text-xs text-gray-600 group-hover:text-green-500">{channel.active} 人在线</div>
-                      </div>
-                    </div>
-                    <div className="w-2 h-2 rounded-full bg-green-500 opacity-0 group-hover:opacity-100 transition shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
-                  </button>
-                ))}
+                <div className="mt-4 text-[#3df2a3] font-bold text-lg">
+                  ▲ 30.58% <span className="text-sm text-gray-500 font-normal">过去1天</span>
+                </div>
               </div>
             </div>
 
-            {/* 右侧栏：大户动态流 (占 8 列) */}
-            <div className="lg:col-span-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-white">🔥 热门交易员</h3>
-                <button className="text-sm text-green-500 hover:text-green-400 font-medium">查看全部</button>
+            {/* 涨幅榜 / 热门列表 */}
+            <div>
+              <div className="flex gap-6 text-sm font-bold text-gray-400 mb-4 border-b border-gray-800 pb-2">
+                <span className="text-white border-b-2 border-white pb-2">🔥 热门</span>
+                <span>🏆 涨幅</span>
+                <span>⚡ 活跃</span>
+                <span>👀 你的</span>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                {MOCK_LEADERS.map((leader, index) => (
-                  <div key={index} className="bg-[#0f0f0f] border border-white/5 rounded-3xl p-5 hover:border-green-500/30 transition group cursor-pointer" onClick={handleVipClick}>
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-2xl border border-gray-700">
-                          {leader.avatar}
-                        </div>
-                        <div>
-                          <div className="font-bold text-white group-hover:text-green-400 transition">{leader.name}</div>
-                          <div className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded-md inline-block mt-1">{leader.tag}</div>
-                        </div>
+              <div className="space-y-4">
+                {TRADERS.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#1a1a24] flex items-center justify-center text-xl">
+                        {item.avatar}
                       </div>
-                      <div className="text-right">
-                        <div className="text-xl font-bold text-green-500">{leader.profit}</div>
-                        <div className="text-xs text-gray-500 font-mono">收益率</div>
+                      <div>
+                        <div className="font-bold">{item.name}</div>
+                        <div className="text-xs text-gray-500">{item.asset} 市值</div>
                       </div>
                     </div>
-                    
-                    <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-green-600 h-full rounded-full" style={{width: `${Math.random() * 40 + 60}%`}}></div>
-                    </div>
-                    <div className="flex justify-between mt-2 text-xs text-gray-500 font-mono">
-                      <span>验证资产: {leader.asset}</span>
-                      <span>刚刚活跃</span>
+                    <div className="text-right">
+                      <div className="text-white font-bold">$0.0248</div>
+                      <div className={`text-xs ${item.status === 'up' ? 'text-[#3df2a3]' : 'text-red-500'}`}>
+                        {item.status === 'up' ? '▲' : '▼'} {item.profit}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-
           </div>
         )}
+
+        {/* TAB 2: 创建/上传 (Create) */}
+        {activeTab === 'create' && (
+          <div className="animate-fade-in flex flex-col items-center justify-center h-[70vh] text-center">
+            <div className="w-24 h-24 rounded-full bg-[#1a1a24] flex items-center justify-center text-5xl mb-6 shadow-[0_0_30px_rgba(217,54,243,0.3)]">
+              📸
+            </div>
+            <h2 className="text-2xl font-bold mb-2">验证你的身价</h2>
+            <p className="text-gray-400 text-sm mb-8 px-8">
+              上传券商持仓截图。通过验证后，你将出现在首页“热门榜单”中。
+            </p>
+            
+            <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*"/>
+            
+            <button 
+              onClick={triggerClick}
+              disabled={uploading}
+              className="bg-[#d936f3] hover:bg-[#b022c6] text-white font-bold py-4 px-12 rounded-full w-full max-w-xs transition shadow-lg flex items-center justify-center gap-2"
+            >
+              {uploading ? '加密上传中...' : '+ 上传持仓截图'}
+            </button>
+            <p className="mt-4 text-xs text-gray-600">仅支持实盘数据，严禁P图</p>
+          </div>
+        )}
+
+        {/* TAB 3: 礼物/邀请 (Gift) */}
+        {activeTab === 'gift' && (
+          <div className="animate-fade-in text-center pt-10">
+            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-[#d936f3] to-purple-700 rounded-full flex items-center justify-center text-5xl mb-6 shadow-2xl">
+              $
+            </div>
+            <h2 className="text-xl font-bold mb-10">邀请好友即刻赚取现金</h2>
+            
+            <div className="flex justify-center gap-8 mb-10">
+               <div className="flex flex-col items-center">
+                 <div className="w-12 h-12 rounded-full bg-[#1a1a24] flex items-center justify-center mb-2 border border-gray-700">
+                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                 </div>
+                 <span className="text-xs text-gray-400">您</span>
+               </div>
+               <div className="flex flex-col items-center opacity-50">
+                 <div className="w-12 h-12 rounded-full bg-[#1a1a24] flex items-center justify-center mb-2 border border-dashed border-gray-600">
+                   +
+                 </div>
+                 <span className="text-xs text-gray-400">直接推荐</span>
+               </div>
+            </div>
+
+            <button className="bg-[#d936f3] text-white font-bold py-4 w-full rounded-full mb-4">
+              邀请好友
+            </button>
+            <p className="text-xs text-gray-500">*奖励以完全抵押的稳定币 USDC 发放。</p>
+          </div>
+        )}
+
+        {/* TAB 4: 持仓/个人 (Profile) */}
+        {activeTab === 'profile' && (
+          <div className="animate-fade-in text-center pt-6">
+            <div className="w-20 h-20 mx-auto rounded-full bg-gray-800 mb-3 overflow-hidden border-2 border-[#3df2a3]">
+               <div className="w-full h-full flex items-center justify-center text-3xl">😎</div>
+            </div>
+            <h2 className="text-lg font-bold">@{user.email?.split('@')[0]}</h2>
+            <div className="text-xs text-[#3df2a3] bg-[#3df2a3]/10 inline-block px-2 py-1 rounded mt-1">
+              {isVerified ? '已验证大户' : '未验证用户'}
+            </div>
+
+            <div className="mt-8 mb-2 text-gray-400 text-sm">BullDate 上总资产</div>
+            <div className="text-4xl font-bold mb-2">$0.00</div>
+            <div className="text-sm text-gray-500">▲ 0% 所有时间</div>
+
+            <div className="flex justify-center gap-8 mt-8 mb-8">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-[#d936f3] flex items-center justify-center text-xl">💲</div>
+                <span className="text-xs font-bold">充值</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-[#1a1a24] flex items-center justify-center text-xl">🚀</div>
+                <span className="text-xs font-bold">发送</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-[#d936f3] flex items-center justify-center text-xl">🏦</div>
+                <span className="text-xs font-bold">提现</span>
+              </div>
+            </div>
+            
+            <div className="bg-[#1a1a24] mx-auto p-6 rounded-2xl text-left border border-white/5 relative overflow-hidden">
+               <div className="relative z-10">
+                 <h3 className="font-bold text-lg mb-1">进行您的第一次验证</h3>
+                 <p className="text-xs text-gray-400 mb-4">上传截图，解锁 VIP 标识</p>
+                 <button onClick={() => setActiveTab('create')} className="bg-[#d936f3] px-6 py-2 rounded-full text-sm font-bold">
+                   去验证
+                 </button>
+               </div>
+            </div>
+          </div>
+        )}
+
       </main>
+
+      {/* ============ 底部导航栏 (Bottom Navigation) ============ */}
+      <div className="fixed bottom-0 w-full bg-[#0b0b15] border-t border-white/5 pb-6 pt-2 px-6 flex justify-between items-center z-50">
+        
+        {/* 1. 首页 */}
+        <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center gap-1 ${activeTab === 'home' ? 'text-white' : 'text-gray-500'}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={activeTab === 'home' ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span className="text-[10px]">首页</span>
+        </button>
+
+        {/* 2. 创建 (核心按钮) */}
+        <button onClick={() => setActiveTab('create')} className={`flex flex-col items-center gap-1 ${activeTab === 'create' ? 'text-white' : 'text-gray-500'}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span className="text-[10px]">创建</span>
+        </button>
+
+        {/* 3. 礼物 */}
+        <button onClick={() => setActiveTab('gift')} className={`flex flex-col items-center gap-1 ${activeTab === 'gift' ? 'text-white' : 'text-gray-500'}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={activeTab === 'gift' ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+          <span className="text-[10px]">礼物</span>
+        </button>
+
+        {/* 4. 持仓/我的 */}
+        <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center gap-1 ${activeTab === 'profile' ? 'text-white' : 'text-gray-500'}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={activeTab === 'profile' ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          <span className="text-[10px]">持仓</span>
+        </button>
+
+      </div>
     </div>
   )
 }
