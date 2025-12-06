@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -9,10 +10,18 @@ export default function Home() {
           BULL<span className="text-white">DATE</span>
         </div>
         <div className="space-x-4">
-          <button className="text-sm font-medium text-gray-400 hover:text-white transition">登录</button>
-          <button className="bg-green-600 hover:bg-green-700 text-black font-bold py-2 px-4 rounded-full text-sm transition">
+          <Link 
+            href="/login"
+            className="text-sm font-medium text-gray-400 hover:text-white transition"
+          >
+            登录
+          </Link>
+          <Link 
+            href="/login"
+            className="bg-green-600 hover:bg-green-700 text-black font-bold py-2 px-4 rounded-full text-sm transition"
+          >
             加入会员
-          </button>
+          </Link>
         </div>
       </nav>
 
@@ -40,12 +49,18 @@ export default function Home() {
 
         {/* 行动按钮 */}
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <button className="bg-green-500 hover:bg-green-400 text-black font-bold text-lg py-4 px-10 rounded-xl transition shadow-[0_0_20px_rgba(34,197,94,0.3)]">
+          <Link 
+            href="/dashboard"
+            className="bg-green-500 hover:bg-green-400 text-black font-bold text-lg py-4 px-10 rounded-xl transition shadow-[0_0_20px_rgba(34,197,94,0.3)] flex items-center justify-center"
+          >
             上传持仓截图 &rarr;
-          </button>
-          <button className="bg-gray-800 hover:bg-gray-700 text-white font-medium text-lg py-4 px-10 rounded-xl border border-gray-700 transition">
+          </Link>
+          <Link 
+            href="/login"
+            className="bg-gray-800 hover:bg-gray-700 text-white font-medium text-lg py-4 px-10 rounded-xl border border-gray-700 transition flex items-center justify-center"
+          >
             我是来围观大神的
-          </button>
+          </Link>
         </div>
 
         {/* 底部信任背书 */}
