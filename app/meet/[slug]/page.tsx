@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Metadata } from "next";
 
-// --- 1. “直球”诱饵库 (SEO 数据源) ---
+// --- 1. 诱饵库 (数据源) ---
 const ASSETS: Record<string, { name: string; type: string; icon: string; color: string; desc: string }> = {
   'bitcoin': { 
     name: "Bitcoin (BTC)", 
@@ -40,9 +40,15 @@ const ASSETS: Record<string, { name: string; type: string; icon: string; color: 
   },
 };
 
-// --- 2. SEO 标题 (必须包含 Dating/交友 关键词) ---
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const slug = params.slug.toLowerCase();
+// 定义参数类型 (适配 Next.js 15)
+type Props = {
+  params: Promise<{ slug: string }>
+}
+
+// --- 2. SEO 标题 (动态生成) ---
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const resolvedParams = await params; // 关键修复：等待参数解析
+  const slug = resolvedParams.slug.toLowerCase();
   const asset = ASSETS[slug] || { name: slug.toUpperCase(), type: "金融", icon: "💰", color: "text-green-500", desc: "高端金融交友社区" };
   
   return {
@@ -53,8 +59,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 // --- 3. 页面渲染 ---
-export default function AssetLandingPage({ params }: { params: { slug: string } }) {
-  const slug = params.slug.toLowerCase();
+export default async function AssetLandingPage({ params }: Props) {
+  const resolvedParams = await params; // 关键修复：等待参数解析
+  const slug = resolvedParams.slug.toLowerCase();
+  
+  // 如果找不到对应数据，就用默认的
   const asset = ASSETS[slug] || { 
     name: slug.toUpperCase(), 
     type: "热门资产", 
@@ -97,7 +106,7 @@ export default function AssetLandingPage({ params }: { params: { slug: string } 
           拒绝杀猪盘，拒绝假照。BullDate 要求必须上传<b>{asset.name}</b>真实持仓截图才能加入。
         </p>
 
-        {/* 转化按钮 (非常直接) */}
+        {/* 转化按钮 */}
         <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto">
           <Link 
             href="/dashboard"
